@@ -1,0 +1,27 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: test-replacepath
+spec:
+  replacePath:
+    path: /
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: emoji
+spec:
+  routes: # [2]
+    - kind: Rule
+      match: Host(`cluster.lab`) #&& PathPrefix(`/emoji`) # [3]
+      # middlewares: # [5]
+      #   - name: test-replacepath # [6]
+      services: # [8]
+        - kind: Service
+          name: web-svc
+          passHostHeader: true
+          namespace: emojivoto
+          port: 80 # [9]
+          scheme: http
