@@ -1,103 +1,41 @@
+install_k3sup_script= File.read("install_k3sup.sh")
+join_cluster_script = File.read("join_cluster.sh")
 
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
+VAGRANTFILE_API_VERSION = "2"
+NUM_BOXES = 6
+CP_BOXES = 3
+IP_OFFSET = 9
+MEMORY = "4096"
+CPU = "4"
 
-# server_ip = "192.168.20.10"
+def ip_from_num(i)
+  "192.168.20.#{IP_OFFSET+i}"
+end
 
-# agents = { "agent1" => "192.168.20.11",
-#            "agent2" => "192.168.20.12",
-#            "agent3" => "192.168.20.13" }
-
-Vagrant.configure("2") do |config|
-
-    config.vm.define "cp1" do |cp1|
-      cp1.vm.box = "generic/ubuntu2210"
-      cp1.vm.hostname = "cp1"
-      cp1.vm.network "private_network", ip: "192.168.20.10"
-      cp1.vm.provision :hosts, :sync_hosts => true
-      cp1.vm.provision "file", source: "./k3sup.pub", destination: "~/.ssh/k3sup.pub"
-      cp1.vm.provision "shell", inline: <<-SHELL
-        cat /home/vagrant/.ssh/k3sup.pub >> /home/vagrant/.ssh/authorized_keys
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  (1..NUM_BOXES).each do |i|
+    is_main = (i == 1)
+    is_cp = (i <= CP_BOXES)
+    config.vm.define "node#{i}".to_sym do |node|
+      node.vm.provider "vmware_desktop" do |v|
+        v.vmx["memsize"] = MEMORY
+        v.vmx["numvcpus"] = CPU
+      end
+      node.vm.box = "generic/ubuntu2210"
+      node.vm.hostname = "node#{i}"
+      node.vm.disk :disk, name: "storage", size: "20GB"
+      node.vm.network "private_network", ip: ip_from_num(i)
+      node.vm.provision :hosts, :sync_hosts => true
+      node.vm.provision "file", source: "./vagrant.pub", destination: "~/.ssh/vagrant.pub"
+      node.vm.provision "shell", inline: <<-SHELL
+        cat /home/vagrant/.ssh/vagrant.pub >> /home/vagrant/.ssh/authorized_keys
       SHELL
-      cp1.vm.provider "vmware_desktop" do |v|
-        v.vmx["memsize"] = "4096"
-        v.vmx["numvcpus"] = "4"
+      node.vm.provision "file", source: "./vagrant-priv", destination: "~/vagrant-priv"
+      node.vm.provision "shell", inline: install_k3sup_script
+      node.vm.provision "shell" do |s|
+        s.inline = join_cluster_script
+        s.args = "#{is_main} #{is_cp} #{ip_from_num(i)}"
       end
     end
-
-    config.vm.define "cp2" do |cp2|
-      cp2.vm.box = "generic/ubuntu2210"
-      cp2.vm.hostname = "cp2"
-      cp2.vm.network "private_network", ip: "192.168.20.11"
-      cp2.vm.provision :hosts, :sync_hosts => true
-      cp2.vm.provision "file", source: "./k3sup.pub", destination: "~/.ssh/k3sup.pub"
-      cp2.vm.provision "shell", inline: <<-SHELL
-        cat /home/vagrant/.ssh/k3sup.pub >> /home/vagrant/.ssh/authorized_keys
-      SHELL
-      cp2.vm.provider "vmware_desktop" do |v|
-        v.vmx["memsize"] = "4096"
-        v.vmx["numvcpus"] = "4"
-      end
-    end
-
-    config.vm.define "cp3" do |cp3|
-      cp3.vm.box = "generic/ubuntu2210"
-      cp3.vm.hostname = "cp3"
-      cp3.vm.network "private_network", ip: "192.168.20.12"
-      cp3.vm.provision :hosts, :sync_hosts => true
-      cp3.vm.provision "file", source: "./k3sup.pub", destination: "~/.ssh/k3sup.pub"
-      cp3.vm.provision "shell", inline: <<-SHELL
-        cat /home/vagrant/.ssh/k3sup.pub >> /home/vagrant/.ssh/authorized_keys
-      SHELL
-      cp3.vm.provider "vmware_desktop" do |v|
-        v.vmx["memsize"] = "4096"
-        v.vmx["numvcpus"] = "4"
-      end
-    end
-
-    config.vm.define "w1" do |w1|
-      w1.vm.box = "generic/ubuntu2210"
-      w1.vm.hostname = "w1"
-      w1.vm.network "private_network", ip: "192.168.20.20"
-      w1.vm.provision :hosts, :sync_hosts => true
-      w1.vm.provision "file", source: "./k3sup.pub", destination: "~/.ssh/k3sup.pub"
-      w1.vm.provision "shell", inline: <<-SHELL
-        cat /home/vagrant/.ssh/k3sup.pub >> /home/vagrant/.ssh/authorized_keys
-      SHELL
-      w1.vm.provider "vmware_desktop" do |v|
-        v.vmx["memsize"] = "4096"
-        v.vmx["numvcpus"] = "4"
-      end
-    end
-
-    config.vm.define "w2" do |w2|
-        w2.vm.box = "generic/ubuntu2210"
-        w2.vm.hostname = "w2"
-        w2.vm.network "private_network", ip: "192.168.20.21"
-        w2.vm.provision :hosts, :sync_hosts => true
-        w2.vm.provision "file", source: "./k3sup.pub", destination: "~/.ssh/k3sup.pub"
-        w2.vm.provision "shell", inline: <<-SHELL
-          cat /home/vagrant/.ssh/k3sup.pub >> /home/vagrant/.ssh/authorized_keys
-        SHELL
-        w2.vm.provider "vmware_desktop" do |v|
-          v.vmx["memsize"] = "4096"
-          v.vmx["numvcpus"] = "4"
-        end
-    end
-
-    config.vm.define "w3" do |w3|
-        w3.vm.box = "generic/ubuntu2210"
-        w3.vm.hostname = "w3"
-        w3.vm.network "private_network", ip: "192.168.20.22"
-        w3.vm.provision :hosts, :sync_hosts => true
-        w3.vm.provision "file", source: "./k3sup.pub", destination: "~/.ssh/k3sup.pub"
-        w3.vm.provision "shell", inline: <<-SHELL
-          cat /home/vagrant/.ssh/k3sup.pub >> /home/vagrant/.ssh/authorized_keys
-        SHELL
-        w3.vm.provider "vmware_desktop" do |v|
-          v.vmx["memsize"] = "4096"
-          v.vmx["numvcpus"] = "4"
-        end
-    end
-
   end
+end
