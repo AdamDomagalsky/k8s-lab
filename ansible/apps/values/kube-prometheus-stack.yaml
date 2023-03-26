@@ -1,0 +1,8 @@
+alertmanager:
+  ingress:
+    enabled: true
+    hosts: ["alertmanager.lab"]
+grafana:
+  ingress:
+    enabled: true
+    hosts: ["grafana.lab"]
