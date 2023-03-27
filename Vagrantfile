@@ -60,6 +60,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     SHELL
     node.vm.provision "shell", inline: default_gateway
     node.vm.provision :hosts, :sync_hosts => true
-
   end
+
 end

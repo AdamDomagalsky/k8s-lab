@@ -1,5 +1,5 @@
 - name: Install helms
-  hosts: helm
+  hosts: localhost
   tasks:
     - name: Instal helm
       become: true
@@ -33,7 +33,7 @@
       module_defaults:
         kubernetes.core.helm:
           create_namespace: true
-          kubeconfig: /home/vagrant/kubeconfig
+          kubeconfig: /home/mj/.kube/config
 
     - name: Apply manifests
       ignore_errors: true

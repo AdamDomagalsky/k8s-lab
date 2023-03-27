@@ -10,3 +10,9 @@ Tech stack will consist of following (in chronological order of provisioning)
 4. Linkerd (https://github.com/linkerd/linkerd2/tree/main/charts)
 
 The demo application running on the cluster will be https://github.com/open-telemetry/opentelemetry-demo
+
+
+
+[TODO]
+
+1. Check cert-manager installation, add prometheus and ingress
