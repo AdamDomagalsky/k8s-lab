@@ -2,7 +2,13 @@ alertmanager:
   ingress:
     enabled: true
     hosts: ["alertmanager.lab"]
+    annotations:
+      cert-manager.io/issuer: ca-issuer
 grafana:
   ingress:
     enabled: true
     hosts: ["grafana.lab"]
+    annotations:
+      cert-manager.io/issuer: ca-issuer
+    tls:
+      - secretName:

@@ -15,6 +15,11 @@
         name: prometheus-community
         repo_url: "https://prometheus-community.github.io/helm-charts"
 
+    - name: Add traefik chart repo
+      kubernetes.core.helm_repository:
+        name: traefik
+        repo_url: "https://traefik.github.io/charts"
+
     - name: Instal core applications
       ignore_errors: true
       block:
@@ -24,16 +29,25 @@
             chart_ref: prometheus-community/kube-prometheus-stack
             release_namespace: monitoring
             values: "{{ lookup('file', './values/kube-prometheus-stack.yaml') | from_yaml }}"
+            chart_version: "45.8.0"
         - name: Deploy cert-manager
           kubernetes.core.helm:
             name: cert-manager
             chart_ref: jetstack/cert-manager
             release_namespace: cert-manager
             values: "{{ lookup('file', './values/cert-manager.yaml') | from_yaml }}"
+            chart_version: "v1.11.0"
+        - name: Deploy traefik
+          kubernetes.core.helm:
+            name: traefik
+            chart_ref: traefik/traefik
+            release_namespace: traefik
+            values: "{{ lookup('file', './values/traefik.yaml') | from_yaml }}"
+            chart_version: "v22.0.0"
       module_defaults:
         kubernetes.core.helm:
           create_namespace: true
-          kubeconfig: /home/mj/.kube/config
+          kubeconfig: /home/vagrant/.kube/config
 
     - name: Apply manifests
       ignore_errors: true
@@ -45,4 +59,5 @@
           kubernetes.core.k8s:
             src: ./files/manifests/cluster-issuer.yaml
       module_defaults:
-        state: present
+        kubernetes.core.k8s:
+          state: present

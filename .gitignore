@@ -2,4 +2,3 @@ vagrant-priv
 vagrant.pub
 .vagrant
 kubeconfig
-ansible/apps/files/openssl/**

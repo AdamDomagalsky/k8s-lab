@@ -1,0 +1,12 @@
+service:
+  type: NodePort
+deployment:
+  kind: DaemonSet
+ports:
+  web:
+    nodePort: 32080
+  websecure:
+    nodePort: 32443
+logs:
+  access:
+    enabled: true
