@@ -4,6 +4,9 @@ ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mkd
 ansible haproxy -m copy -i inventory.ini -b -a 'src=./ad-hoc/haproxy.cfg dest=/etc/haproxy/haproxy.cfg'
 ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl restart haproxy"
 
+####### NFSv4
+ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install nfs-kernel-server portmap nfs-common -y"
+
 
 ####### PREPARE COMMON PARTS
 ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "modprobe overlay"
