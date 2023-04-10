@@ -5,27 +5,40 @@ ansible haproxy -m copy -i inventory.ini -b -a 'src=./ad-hoc/haproxy.cfg dest=/e
 ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl restart haproxy"
 
 ####### NFSv4
-ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install nfs-kernel-server portmap nfs-common -y"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install nfs-kernel-server -y"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install nfs-common -y"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "pvcreate /dev/sdb"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "vgcreate k8s_data /dev/sdb"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "lvcreate -n k8s_drive -L 99G k8s_data"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mkfs.ext4 -m 0 /dev/k8s_data/k8s_drive "
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mkdir /var/nfs/k8s -p"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "chown nobody:nogroup /var/nfs/k8s"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "echo '/var/nfs/k8s 192.168.20.0/24(rw)' > /etc/exports"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl restart nfs-kernel-server"
+
+
 
 
 ####### PREPARE COMMON PARTS
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "modprobe overlay"
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "modprobe br_netfilter"
-ansible all -m copy -b -i inventory.ini -a 'src=./ad-hoc/99-kubernetes-cri.conf dest=/etc/sysctl.d/99-kubernetes-cri.conf'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "sysctl --system"
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; echo "deb $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VER/$OS/ /" | tee /etc/apt/sources.list.d/cri-0.list'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; curl -L $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VER/$OS/Release.key | apt-key add -'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; echo "deb $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" | tee  /etc/apt/sources.list.d/libcontainers.list'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; curl -L $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | apt-key add -'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install -y cri-o cri-o-runc"
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl daemon-reload && systemctl enable crio && systemctl start crio"
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl status crio"
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "cat /etc/apt/sources.list.d/kubernetes.list"
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'echo "deb  http://apt.kubernetes.io/  kubernetes-xenial  main" > /etc/apt/sources.list.d/kubernetes.list'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'apt-get update'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'apt-get install -y kubeadm=1.25.1-00 kubelet=1.25.1-00 kubectl=1.25.1-00'
-ansible all -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'apt-mark hold kubelet kubeadm kubectl'
+
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "echo '192.168.20.100 kubeapi.lab' >> /etc/hosts"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "modprobe overlay"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "modprobe br_netfilter"
+ansible cluster -m copy -b -i inventory.ini -a 'src=./ad-hoc/99-kubernetes-cri.conf dest=/etc/sysctl.d/99-kubernetes-cri.conf'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "sysctl --system"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; echo "deb $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VER/$OS/ /" | tee /etc/apt/sources.list.d/cri-0.list'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; curl -L $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VER/$OS/Release.key | apt-key add -'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; echo "deb $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" | tee  /etc/apt/sources.list.d/libcontainers.list'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'export OS=xUbuntu_22.04 VER=1.25 WEBSITE=http://download.opensuse.org; curl -L $WEBSITE/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | apt-key add -'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install -y cri-o cri-o-runc"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl daemon-reload && systemctl enable crio && systemctl start crio"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl status crio"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "cat /etc/apt/sources.list.d/kubernetes.list"
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'echo "deb  http://apt.kubernetes.io/  kubernetes-xenial  main" > /etc/apt/sources.list.d/kubernetes.list'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'apt-get update'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'apt-get install -y kubeadm=1.25.1-00 kubelet=1.25.1-00 kubectl=1.25.1-00'
+ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a 'apt-mark hold kubelet kubeadm kubectl'
 
 ####### PREPARE INITIAL CP NODE
 ansible master -m copy -i inventory.ini -b -a 'src=./ad-hoc/kubeadm-crio-new.yaml dest=/root/kubeadm-crio.yaml'
@@ -65,8 +78,8 @@ sudo kubeadm init --config=kubeadm-crio.yaml --upload-certs | tee kubeadm-init.o
 
 
 #REMOVAL
-ansible all -m ansible.builtin.shell -b -i inventory.ini -B 360 -P 3 -a 'rm -rf /etc/apt/sources.list.d/cri-0.list; rm -rf /etc/apt/sources.list.d/libcontainers.list; apt-get update'
-ansible all -m ansible.builtin.shell -b -i inventory.ini -B 360 -P 3 -a 'rm -rf /etc/apt/sources.list.d/kubernetes.list; apt-get update'
+ansible cluster -m ansible.builtin.shell -b -i inventory.ini -B 360 -P 3 -a 'rm -rf /etc/apt/sources.list.d/cri-0.list; rm -rf /etc/apt/sources.list.d/libcontainers.list; apt-get update'
+ansible cluster -m ansible.builtin.shell -b -i inventory.ini -B 360 -P 3 -a 'rm -rf /etc/apt/sources.list.d/kubernetes.list; apt-get update'
 
 
 
