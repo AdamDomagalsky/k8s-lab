@@ -15,6 +15,11 @@
         name: prometheus-community
         repo_url: "https://prometheus-community.github.io/helm-charts"
 
+    - name: Add grafana chart repo
+      kubernetes.core.helm_repository:
+        name: grafana
+        repo_url: "https://grafana.github.io/helm-charts"
+
     - name: Add traefik chart repo
       kubernetes.core.helm_repository:
         name: traefik
@@ -42,6 +47,13 @@
             release_namespace: monitoring
             values: "{{ lookup('file', './values/kube-prometheus-stack.yaml') | from_yaml }}"
             chart_version: "45.8.1"
+        - name: Deploy loki
+          kubernetes.core.helm:
+            name: loki
+            chart_ref: grafana/loki
+            release_namespace: monitoring
+            values: "{{ lookup('file', './values/loki.yaml') | from_yaml }}"
+            chart_version: "5.0.0"
         - name: Deploy cert-manager
           kubernetes.core.helm:
             name: cert-manager

@@ -1,0 +1,7 @@
+minio:
+  enabled: true
+loki:
+  commonConfig:
+    replication_factor: 3
+singleBinary:
+  replicas: 3
