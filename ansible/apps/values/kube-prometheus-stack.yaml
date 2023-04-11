@@ -3,12 +3,37 @@ alertmanager:
     enabled: true
     hosts: ["alertmanager.lab"]
     annotations:
-      cert-manager.io/issuer: ca-issuer
+      cert-manager.io/cluster-issuer: ca-issuer
+      kubernetes.io/ingress.class: traefik
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    tls:
+      - hosts:
+          - alertmanager.lab
+        secretName: alertmanager-ssl
 grafana:
   ingress:
     enabled: true
     hosts: ["grafana.lab"]
     annotations:
-      cert-manager.io/issuer: ca-issuer
+      cert-manager.io/cluster-issuer: ca-issuer
+      kubernetes.io/ingress.class: traefik
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
     tls:
-      - secretName:
+      - hosts:
+          - grafana.lab
+        secretName: grafana-ssl
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-csi
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+    securityContext:
+      runAsGroup: 65534
+      runAsNonRoot: true
+      runAsUser: 65534
+      fsGroup: 65534

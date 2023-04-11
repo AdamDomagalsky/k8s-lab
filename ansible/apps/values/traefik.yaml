@@ -5,8 +5,19 @@ deployment:
 ports:
   web:
     nodePort: 32080
+    redirectTo: websecure
   websecure:
     nodePort: 32443
+  traefik:
+    expose: true
 logs:
   access:
     enabled: true
+providers:
+  kubernetesCRD:
+    enabled: false
+ingressRoute:
+  dashboard:
+    enabled: false
+additionalArguments:
+  - "--api.insecure=true"

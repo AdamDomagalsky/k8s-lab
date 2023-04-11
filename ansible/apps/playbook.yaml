@@ -33,7 +33,7 @@
             name: csi-driver-nfs
             chart_ref: csi-driver-nfs/csi-driver-nfs
             release_namespace: kube-system
-            values: "{{ lookup('file', './values/kube-prometheus-stack.yaml') | from_yaml }}"
+            values: "{{ lookup('file', './values/csi-driver-nfs.yaml') | from_yaml }}"
             chart_version: "v4.2.0"
         - name: Deploy kube-prometheus-stack
           kubernetes.core.helm:
@@ -41,7 +41,7 @@
             chart_ref: prometheus-community/kube-prometheus-stack
             release_namespace: monitoring
             values: "{{ lookup('file', './values/kube-prometheus-stack.yaml') | from_yaml }}"
-            chart_version: "45.8.0"
+            chart_version: "45.8.1"
         - name: Deploy cert-manager
           kubernetes.core.helm:
             name: cert-manager
@@ -64,12 +64,18 @@
     - name: Apply manifests
       ignore_errors: true
       block:
+        - name: Storage class
+          kubernetes.core.k8s:
+            src: ./files/manifests/storageclass.yaml
         - name: CA Secret
           kubernetes.core.k8s:
             src: ./files/manifests/cacert-secret.yaml
         - name: Cluster issuer
           kubernetes.core.k8s:
             src: ./files/manifests/cluster-issuer.yaml
+        - name: Traefik dashboard
+          kubernetes.core.k8s:
+            src: ./files/manifests/traefik-dashboard-ingress.yaml
       module_defaults:
         kubernetes.core.k8s:
           state: present
