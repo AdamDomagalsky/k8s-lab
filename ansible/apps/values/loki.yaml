@@ -1,7 +1,13 @@
 minio:
   enabled: true
+  securityContext:
+    fsGroupChangePolicy: Always
 loki:
   commonConfig:
     replication_factor: 3
+  auth_enabled: false
 singleBinary:
   replicas: 3
+monitoring:
+  selfMonitoring:
+    enabled: true

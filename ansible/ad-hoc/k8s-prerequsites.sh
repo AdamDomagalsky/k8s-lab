@@ -4,7 +4,7 @@ ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mkd
 ansible haproxy -m copy -i inventory.ini -b -a 'src=./ad-hoc/haproxy.cfg dest=/etc/haproxy/haproxy.cfg'
 ansible haproxy -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl restart haproxy"
 
-####### NFSv4
+####### NFSv3
 ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install nfs-kernel-server -y"
 ansible cluster -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "apt-get update && apt-get install nfs-common -y"
 ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "pvcreate /dev/sdb"
@@ -12,9 +12,13 @@ ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "vgcreat
 ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "lvcreate -n k8s_drive -L 99G k8s_data"
 ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mkfs.ext4 -m 0 /dev/k8s_data/k8s_drive "
 ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mkdir /var/nfs/k8s -p"
-ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "chown nobody:nogroup /var/nfs/k8s"
-ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "echo '/var/nfs/k8s 192.168.20.0/24(rw)' > /etc/exports"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "echo 'UUID=8bce7062-93e0-4046-9dd2-211152c556b3 /var/nfs/k8s ext4 defaults 0 1' >> /etc/fstab"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "mount -a"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "chown 1000:1000 /var/nfs/k8s"
+ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "echo '/var/nfs/k8s 192.168.20.0/24(rw,all_squash,anonuid=1000,anongid=1000)' > /etc/exports"
+##TODO fstab entry for nfs data
 ansible NFS -m ansible.builtin.shell -i inventory.ini -b -B 360 -P 3 -a "systemctl restart nfs-kernel-server"
+
 
 
 

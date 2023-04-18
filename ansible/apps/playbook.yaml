@@ -73,6 +73,19 @@
           create_namespace: true
           kubeconfig: /home/vagrant/.kube/config
 
+    - name: Remove existing objects
+      ignore_errors: true
+      block:
+        - name: podlog
+          kubernetes.core.k8s:
+            api_version: monitoring.grafana.com/v1alpha1
+            kind: PodLogs
+            namespace: monitoring
+            name: loki
+      module_defaults:
+        kubernetes.core.k8s:
+          state: absent
+
     - name: Apply manifests
       ignore_errors: true
       block:
@@ -88,6 +101,9 @@
         - name: Traefik dashboard
           kubernetes.core.k8s:
             src: ./files/manifests/traefik-dashboard-ingress.yaml
+        - name: Podlog loki config
+          kubernetes.core.k8s:
+            src: ./files/manifests/loki-podlogs.yaml
       module_defaults:
         kubernetes.core.k8s:
           state: present
