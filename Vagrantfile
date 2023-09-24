@@ -16,6 +16,7 @@ HAPROXY_IP = "192.168.20.100"
 NFS_CPU = "2"
 NFS_MEMORY = "2048"
 NFS_IP = "192.168.20.50"
+VM_BOX="generic/ubuntu2204"
 
 def ip_from_num(i)
   "192.168.20.#{IP_OFFSET+i}"
@@ -30,7 +31,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         v.vmx["memsize"] = MEMORY
         v.vmx["numvcpus"] = CPU
       end
-      node.vm.box = "generic/ubuntu2210"
+      node.vm.box = VM_BOX
       node.vm.hostname = "node#{i}"
       # node.vm.disk :disk, name: "storage", size: "20GB"
       node.vm.network "private_network", ip: ip_from_num(i)
@@ -53,7 +54,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       v.vmx["memsize"] = HAPROXY_MEMORY
       v.vmx["numvcpus"] = HAPROXY_CPU
     end
-    node.vm.box = "generic/ubuntu2210"
+    node.vm.box = VM_BOX
     node.vm.hostname = "haproxy"
     node.vm.network "private_network", ip: HAPROXY_IP
     node.vm.provision "file", source: "./vagrant.pub", destination: "~/.ssh/vagrant.pub"
@@ -69,7 +70,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       v.vmx["memsize"] = NFS_MEMORY
       v.vmx["numvcpus"] = NFS_CPU
     end
-    node.vm.box = "generic/ubuntu2210"
+    node.vm.box = VM_BOX
     node.vm.hostname = "NFS"
     node.vm.network "private_network", ip: NFS_IP
     node.vm.disk :disk, name: "storage1", size: "100GB"

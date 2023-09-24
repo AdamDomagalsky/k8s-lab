@@ -4,31 +4,34 @@
     - name: Instal helm
       become: true
       ansible.builtin.shell: curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
     - name: Add cert-manager chart repo
       kubernetes.core.helm_repository:
         name: jetstack
         repo_url: "https://charts.jetstack.io"
-
     - name: Add kube-prometheus-stack chart repo
       kubernetes.core.helm_repository:
         name: prometheus-community
         repo_url: "https://prometheus-community.github.io/helm-charts"
-
     - name: Add grafana chart repo
       kubernetes.core.helm_repository:
         name: grafana
         repo_url: "https://grafana.github.io/helm-charts"
-
     - name: Add traefik chart repo
       kubernetes.core.helm_repository:
         name: traefik
         repo_url: "https://traefik.github.io/charts"
-
     - name: Add csi-driver-nfs chart repo
       kubernetes.core.helm_repository:
         name: csi-driver-nfs
         repo_url: "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts"
+    # - name: Add linkerd chart repo
+    #   kubernetes.core.helm_repository:
+    #     name: linkerd
+    #     repo_url: https://helm.linkerd.io/stable"
+    - name: Add opentelemetry chart repo
+      kubernetes.core.helm_repository:
+        name: opentelemetry
+        repo_url: https://open-telemetry.github.io/opentelemetry-helm-charts
 
     - name: Instal core applications
       ignore_errors: true
@@ -53,7 +56,7 @@
             chart_ref: grafana/loki
             release_namespace: monitoring
             values: "{{ lookup('file', './values/loki.yaml') | from_yaml }}"
-            chart_version: "5.0.0"
+            chart_version: "5.5.1"
         - name: Deploy cert-manager
           kubernetes.core.helm:
             name: cert-manager
@@ -68,6 +71,39 @@
             release_namespace: traefik
             values: "{{ lookup('file', './values/traefik.yaml') | from_yaml }}"
             chart_version: "v22.0.0"
+        - name: Deploy linkerd-crd
+          kubernetes.core.helm:
+            name: linkerd-crds
+            chart_ref: linkerd/linkerd-crds
+            release_namespace: linkerd
+            chart_version: "1.6.1"
+        - name: Deploy linkerd
+          kubernetes.core.helm:
+            name: linkerd-control-plane
+            chart_ref: linkerd/linkerd-control-plane
+            release_namespace: linkerd
+            values: "{{ lookup('file', './values/linkerd.yaml') | from_yaml }}"
+            set_values:
+              - value: identityTrustAnchorsPEM=./files/openssl/ca.crt
+                value_type: file
+            chart_version: "1.12.2"
+        - name: Deploy linkerd-viz
+          kubernetes.core.helm:
+            name: linkerd-viz
+            chart_ref: linkerd/linkerd-viz
+            release_namespace: linkerd-viz
+            chart_version: "30.8.2"
+            values:
+              enforcedHostRegexp: ^linkerd\.lab$
+              dashboard:
+                enforcedHostRegexp: ^linkerd\.lab$
+        - name: Deploy otel-demo
+          kubernetes.core.helm:
+            name: otel-demo
+            chart_ref: opentelemetry/opentelemetry-demo
+            release_namespace: otel-demo
+            values: "{{ lookup('file', './values/otel-demo.yaml') | from_yaml }}"
+
       module_defaults:
         kubernetes.core.helm:
           create_namespace: true
@@ -104,6 +140,12 @@
         - name: Podlog loki config
           kubernetes.core.k8s:
             src: ./files/manifests/loki-podlogs.yaml
+        - name: Linkerd mtls cert
+          kubernetes.core.k8s:
+            src: ./files/manifests/linkerd-mtls-cert.yaml
+        - name: Linkerd ingress
+          kubernetes.core.k8s:
+            src: ./files/manifests/linkerd-viz-ingress.yaml
       module_defaults:
         kubernetes.core.k8s:
           state: present

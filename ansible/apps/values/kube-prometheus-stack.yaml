@@ -23,6 +23,17 @@ grafana:
           - grafana.lab
         secretName: grafana-ssl
 prometheus:
+  ingress:
+    enabled: true
+    hosts: ["prometheus.lab"]
+    annotations:
+      cert-manager.io/cluster-issuer: ca-issuer
+      kubernetes.io/ingress.class: traefik
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    tls:
+      - hosts:
+          - prometheus.lab
+        secretName: prometheus-ssl
   prometheusSpec:
     storageSpec:
       volumeClaimTemplate:
